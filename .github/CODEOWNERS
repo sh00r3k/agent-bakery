@@ -1,0 +1,18 @@
+# CODEOWNERS — single-owner repo, but GitHub requires the file to be
+# present for branch-protection "require code owner review" to ever trigger
+# for future contributors. The wildcard pattern below assigns every path
+# to the repo owner; tighten with per-area teams as the project grows.
+* @sh00r3k
+
+# Sensitive surfaces — explicit ownership even though it collapses to the
+# same handle today. If the repo ever leaves single-ownership, these
+# entries become the boundary that requires a security-reviewer sign-off
+# before a path can land.
+.github/workflows/        @sh00r3k
+.github/dependabot.yml    @sh00r3k
+.env.example              @sh00r3k
+infra/                    @sh00r3k
+docs/business-rules.md    @sh00r3k
+packages/agentkit/src/agentkit/egress.py   @sh00r3k
+packages/agentkit/src/agentkit/auth.py     @sh00r3k
+packages/agentkit/src/agentkit/config.py   @sh00r3k

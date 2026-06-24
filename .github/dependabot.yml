@@ -1,0 +1,29 @@
+version: 2
+
+# Keep deps + Actions fresh and surface vulns as PRs. Coalesce noisy
+# minor/patch updates into one PR per ecosystem; majors + security fixes
+# land alone so each change is reviewable.
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      python-minor-patch:
+        update-types: ["minor", "patch"]
+        patterns: ["*"]
+    # uv-managed workspace — point Dependabot at the root lockfile; per-member
+    # manifests are path-dependency members of the same workspace.
+    # ignore: dependency-name: ["agentkit", "monitoring-agent", "dashboard",
+    #   "platform-cli", "classifier-agent"]  — these are local workspace
+    #   members, not PyPI packages.
