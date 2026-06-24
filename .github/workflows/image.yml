@@ -23,7 +23,7 @@ env:
 
 jobs:
   build:
-    name: build & push (${{ matrix.member.title }})
+    name: build & push (${{ matrix.title }})
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -52,16 +52,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push (${{ matrix.member.title }})
+      - name: Build & push (${{ matrix.title }})
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ${{ matrix.member.dockerfile }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/agent-bakery/${{ matrix.member.title }}:edge
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/agent-bakery/${{ matrix.title }}:edge
           labels: |
-            org.opencontainers.image.title=${{ matrix.member.title }}
+            org.opencontainers.image.title=${{ matrix.title }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           provenance: true
