@@ -163,7 +163,7 @@ platform-run end-user identity.
 
 ## Community
 
-- **Maintainer** — [@sh00r3k](https://github.com/sh00r3k) (security reports via the address in [`SECURITY.md`](SECURITY.md))
+- **Maintainer** — [@sh00r3k](https://github.com/sh00r3k) (security reports to sh00r3k@gmail.com)
 - **Issues & feature requests** — GitHub Issues
   ([bug template](.github/ISSUE_TEMPLATE/bug_report.md),
   [feature template](.github/ISSUE_TEMPLATE/feature_request.md))
