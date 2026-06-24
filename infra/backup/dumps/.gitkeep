@@ -1,0 +1,3 @@
+# Backup dumps land here when the `backup` profile runs (BACKUP_DIR default).
+# Tracked only to materialize the bind-mount target; actual *.sql.gz dumps are
+# gitignored (they contain tenant data — never commit them).

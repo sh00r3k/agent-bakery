@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Access tokens · {{ brand }}{% endblock %}
+{% block content %}
+<h1>Access tokens</h1>
+<p class="muted">Mint a personal access token for cron jobs, scripts, and CI. The
+secret is shown <b>once</b> at creation and stored only as a hash — keep it safe.</p>
+
+<section class="panel">
+  <form class="toolbar" hx-post="/actions/token/mint" hx-target="#token-reveal" hx-swap="innerHTML">
+    <span class="field"><label for="t-name">name</label>
+      <input id="t-name" name="name" placeholder="ci-deploy" required></span>
+    <span class="field"><label for="t-scope">scope</label>
+      <input id="t-scope" name="scope" value="read:agents"></span>
+    <span class="field"><label for="t-role">role</label>
+      <select id="t-role" name="role">
+        <option value="viewer">viewer</option>
+        <option value="manager">manager</option>
+        <option value="admin">admin</option>
+      </select></span>
+    <span class="field"><label for="t-exp">expires (days)</label>
+      <input id="t-exp" name="expires_days" type="number" value="30" min="1" max="365"></span>
+    <button type="submit">Mint token</button>
+  </form>
+  <div id="token-reveal"></div>
+</section>
+
+<div id="token-list" hx-get="/partials/tokens" hx-trigger="load" hx-swap="innerHTML">
+  <p class="muted">loading tokens…</p>
+</div>
+{% endblock %}

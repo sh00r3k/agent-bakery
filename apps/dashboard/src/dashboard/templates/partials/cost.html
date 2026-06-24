@@ -1,0 +1,52 @@
+<section class="aggbar">
+  Total today (agent-estimated): <b>${{ '%.2f'|format(rollup.total_usd_today) }}</b>
+  {% if rollup.unavailable %}<span class="warn">⚠ unavailable: {{ rollup.unavailable|join(', ') }}</span>{% endif %}
+</section>
+<div class="panel">
+<table class="grid">
+  <thead><tr><th>agent</th><th>USD today (est.)</th><th>bar</th></tr></thead>
+  <tbody>
+  {% for agent, usd in rollup.per_agent.items() %}
+    <tr>
+      <td>{{ agent }}</td>
+      <td>${{ '%.4f'|format(usd) }}</td>
+      <td><span class="bar" style="--bar-w: {{ (usd / (rollup.total_usd_today or 1) * 100)|round(1) }}%"></span></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="3" class="muted">no cost data</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<section class="aggbar">
+  Spend over time (week / month / all-time):
+  <b>${{ '%.2f'|format(totals.week) }}</b> wk ·
+  <b>${{ '%.2f'|format(totals.month) }}</b> mo ·
+  <b>${{ '%.2f'|format(totals.all_time) }}</b> all
+  <span class="muted">rolling 7/30 days; daily-max basis</span>
+</section>
+<div class="panel">
+<table class="grid">
+  <thead>
+    <tr>
+      <th>agent</th><th>last active</th>
+      <th>week (7d)</th><th>month (30d)</th><th>all-time</th><th>bar</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for w in windows %}
+    <tr>
+      <td>{{ w.agent }}</td>
+      <td class="muted">{{ w.last_active.strftime('%Y-%m-%d') if w.last_active else '—' }}</td>
+      <td>${{ '%.4f'|format(w.week) }}</td>
+      <td>${{ '%.4f'|format(w.month) }}</td>
+      <td>${{ '%.4f'|format(w.all_time) }}</td>
+      <td><span class="bar" style="--bar-w: {{ (w.all_time / (totals.all_time or 1) * 100)|round(1) }}%"></span></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" class="muted">no spend history yet — accrues as snapshots land (~60s cadence)</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

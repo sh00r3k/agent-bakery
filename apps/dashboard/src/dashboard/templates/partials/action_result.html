@@ -1,0 +1,5 @@
+{% if ok %}
+  <p class="ok">✓ {{ action }} triggered.</p>
+{% else %}
+  <p class="warn">⚠ {{ action }} failed: {{ reason }}</p>
+{% endif %}

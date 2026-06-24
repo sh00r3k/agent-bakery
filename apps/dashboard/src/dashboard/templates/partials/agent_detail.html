@@ -1,0 +1,64 @@
+{# Per-agent detail (AG-1). Context (views.agent_detail_context):
+   unavailable, slug, health(HealthDTO), capabilities[], heartbeats[]. #}
+{% set _label = {"green": "healthy", "amber": "degraded", "red": "down", "grey": "batch"} %}
+{% if unavailable %}
+  <div class="panel"><p class="error">⚠ {{ unavailable }}. <a href="/agents">Back to agents →</a></p></div>
+{% elif health %}
+<section class="aggbar">
+  <span class="dot {{ health.status }}"></span>{{ _label.get(health.status, health.status) }}
+  <span class="sep">|</span> kind: <b>{{ health.kind }}</b>
+  {% if health.kind != 'batch' %}<span class="sep">·</span> port <b>{{ health.port }}</b>{% endif %}
+  {% if health.error %}<span class="sep">|</span><span class="warn">⚠ {{ health.error }}</span>{% endif %}
+</section>
+
+<section class="metrics">
+  <div class="metric-stat">
+    <span class="metric-label">uptime</span>
+    <span class="metric-num">{% if health.uptime_s is not none %}{{ health.uptime_s|round(0)|int }}s{% else %}—{% endif %}</span>
+  </div>
+  <div class="metric-stat">
+    <span class="metric-label">err rate 5m</span>
+    <span class="metric-num">{% if health.error_rate_5m is not none %}{{ '%.1f'|format(health.error_rate_5m * 100) }}%{% else %}—{% endif %}</span>
+  </div>
+  <div class="metric-stat">
+    <span class="metric-label">req 5m</span>
+    <span class="metric-num">{% if health.requests_5m is not none %}{{ health.requests_5m }}{% else %}—{% endif %}</span>
+  </div>
+  <div class="metric-stat">
+    <span class="metric-label">llm today</span>
+    <span class="metric-num">{% if health.llm_cost_usd_today is not none %}${{ '%.2f'|format(health.llm_cost_usd_today) }}{% else %}—{% endif %}</span>
+  </div>
+</section>
+
+<div class="panel">
+  <h3>Capabilities</h3>
+  {% if capabilities %}
+    {% for cap in capabilities %}<span class="badge info">{{ cap }}</span> {% endfor %}
+  {% else %}
+    <p class="muted">No declared capabilities — this agent exposes health only.</p>
+  {% endif %}
+  <footer class="toolbar">
+    {% if health.has_incidents %}<a class="btn-ghost" href="/incidents">incidents →</a>{% endif %}
+    {% if health.has_findings %}<a class="btn-ghost" href="/findings">findings →</a>{% endif %}
+    {% if health.has_runs %}<a class="btn-ghost" href="/pipeline">pipeline →</a>{% endif %}
+    {% if health.has_pm %}<a class="btn-ghost" href="/pm">digests →</a>{% endif %}
+    <a class="btn-ghost" href="/cost">cost →</a>
+  </footer>
+</div>
+
+<div class="panel">
+  <h3>Recent heartbeats</h3>
+  {% if heartbeats %}
+    <div class="hb-strip">
+      {% for h in heartbeats %}
+        <span class="hb {{ 'up' if h.up else 'down' }}" title="{{ h.ts }}{% if not h.up %} · down{% endif %}"></span>
+      {% endfor %}
+    </div>
+    <p class="faint">{{ heartbeats|length }} samples · newest right</p>
+  {% else %}
+    <p class="muted">No heartbeats recorded yet — the dashboard snapshots health every 60s once its DB is reachable.</p>
+  {% endif %}
+</div>
+{% else %}
+  <div class="panel"><p class="muted">No data for this agent.</p></div>
+{% endif %}

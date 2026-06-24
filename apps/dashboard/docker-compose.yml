@@ -1,0 +1,50 @@
+# Reference compose for the ops dashboard. Joins the EXISTING shared
+# `agent_backend` network — it does NOT start its own Postgres/Redis/RabbitMQ.
+# Mirrors a hardened host stack (cap_drop, no-new-privileges, resource limits,
+# healthcheck). Run from this directory: `docker compose up -d`.
+services:
+  dashboard:
+    build:
+      # Repo root as context so the workspace package agentkit is available.
+      context: ../..
+      dockerfile: apps/dashboard/Dockerfile
+    container_name: dashboard
+    env_file: .env
+    # Chat LLM gateway + local Ollama embeddings live on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      agent_backend:
+        # Stable in-cluster hostname `dashboard` (matches the registry / self
+        # URL) regardless of the container_name.
+        aliases:
+          - dashboard
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Stateless service: lock the root filesystem read-only with a writable tmpfs
+    # for /tmp only.
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Bind only to loopback on the host; nginx terminates TLS and proxies in.
+    ports:
+      - "127.0.0.1:8005:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          # Plan 4 §6 budget: ~140 MB RSS, cap 256M / 0.5 cpu.
+          cpus: "0.5"
+          memory: 256M
+    restart: unless-stopped
+
+networks:
+  agent_backend:
+    external: true
+    name: agent_backend

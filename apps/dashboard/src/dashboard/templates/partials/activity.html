@@ -1,0 +1,57 @@
+{# Activity-log fragment (Pattern 4) with filters + paging (AU-1).
+   Context (views.activity_context): unavailable, events[], actions[],
+   filter{action,actor,q}, next_before. The filter form re-queries this same
+   endpoint and swaps #activity-mount; tenant stays principal-scoped (BR-002). #}
+<section class="panel">
+  <header class="toolbar">
+    <span class="aggbar">
+      <span class="dot {{ 'grey' if unavailable else 'green' }}"></span> activity log
+      {% if events %}<span class="sep">·</span> <b>{{ events | length }}</b> events{% endif %}
+    </span>
+    <span class="spacer"></span>
+    <a class="btn-ghost" href="/audit/export?format=json" download>Export JSON</a>
+    <a class="btn-ghost" href="/audit/export?format=csv" download>Export CSV</a>
+  </header>
+
+  {% if not unavailable %}
+  <form class="filterbar" hx-get="/partials/activity" hx-target="#activity-mount" hx-swap="innerHTML"
+        hx-trigger="submit, change from:select">
+    <label class="field">
+      <span>action</span>
+      <select name="action">
+        <option value="">all</option>
+        {% for a in actions %}
+          <option value="{{ a }}"{% if filter.action == a %} selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span>actor</span>
+      <input type="text" name="actor" value="{{ filter.actor or '' }}" placeholder="exact actor">
+    </label>
+    <label class="field">
+      <span>search</span>
+      <input type="search" name="q" value="{{ filter.q or '' }}" placeholder="actor / action / resource">
+    </label>
+    <button class="mini">apply</button>
+    <a class="btn-ghost mini" href="/activity">reset</a>
+  </form>
+  {% endif %}
+
+  {% if unavailable %}
+    <p class="error">activity log unavailable — {{ unavailable }}.</p>
+  {% elif events %}
+    {% include "partials/_activity_stream.html" %}
+    {% if next_before %}
+    <form class="inline" hx-get="/partials/activity" hx-target="#activity-mount" hx-swap="innerHTML">
+      <input type="hidden" name="action" value="{{ filter.action or '' }}">
+      <input type="hidden" name="actor" value="{{ filter.actor or '' }}">
+      <input type="hidden" name="q" value="{{ filter.q or '' }}">
+      <input type="hidden" name="before" value="{{ next_before }}">
+      <button class="btn-ghost mini">load older →</button>
+    </form>
+    {% endif %}
+  {% else %}
+    <p class="muted">No matching activity. Clear the filters, or actions (sweeps, scans, logins, triage, token mints) appear here as they happen.</p>
+  {% endif %}
+</section>

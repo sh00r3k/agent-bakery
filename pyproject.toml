@@ -1,0 +1,84 @@
+[project]
+name = "agent-bakery"
+version = "0.1.0"
+description = "Build and operate self-hosted LangGraph agents (OSS, no paid Server): a shared toolkit (agentkit), agent meta-monitoring, an ops dashboard, and an example agent. (The flagship agentic QA tester, ultraQA, ships as its own repo.)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "sh00r3k", email = "sh00r3k@gmail.com" }
+]
+keywords = ["agent-bakery", "langgraph", "monitoring", "ops", "self-hosted"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: POSIX :: Linux",
+    "License :: OSI Approved :: Apache Software License",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development",
+]
+
+[tool.uv.workspace]
+members = ["packages/*", "agents/*", "apps/*"]
+
+[tool.uv.sources]
+agentkit = { workspace = true }
+monitoring-agent = { workspace = true }
+dashboard = { workspace = true }
+platform-cli = { workspace = true }
+
+# Root is a virtual workspace aggregator: it depends on every member so
+# `uv sync` installs all the agents in one editable environment.
+[dependency-groups]
+dev = [
+    "agentkit",
+    "monitoring-agent",
+    "dashboard",
+    "platform-cli",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "asgi-lifespan>=2.1",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/static/**", "**/templates/**"]
+
+[tool.ruff.lint]
+# Real errors + import sorting + high-value safety/modernization families.
+# E501/line-length is the formatter's job, so it is not selected here.
+#   E,F  pycodestyle errors + Pyflakes        I    import sorting
+#   B    flake8-bugbear (likely bugs)         UP   pyupgrade (modern syntax)
+#   S    flake8-bandit (security)             ASYNC asyncio footguns
+#   SIM  simplify                             RUF  Ruff-native lints
+select = ["E", "F", "I", "B", "UP", "S", "ASYNC", "SIM", "RUF"]
+# B008: FastAPI's dependency-injection idiom is `param = Depends(...)` /
+# `= Query(...)` in defaults; bugbear flags every route, so disable globally.
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests legitimately use `assert` (S101), embed throwaway secrets/tokens
+# (S105/S106), bind test servers (S104), and exercise broad exceptions (B017).
+"**/tests/**" = ["S101", "S105", "S106", "S104", "B017"]
+"**/conftest.py" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+namespace_packages = true
+explicit_package_bases = true
+
+# Tests are exercised by pytest, not the type gate; keep strict on src only.
+[[tool.mypy.overrides]]
+module = ["tests.*", "*.tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Pipeline{% endblock %}
+{% block content %}
+<h1>Extension pipeline runs</h1>
+<button hx-post="/actions/webext/run" hx-target="#webext-run-result" hx-swap="innerHTML">Run pipeline</button>
+<span class="muted">runs a small bounded batch (limit 1)</span>
+<div id="webext-run-result"></div>
+<div hx-get="/partials/pipeline" hx-trigger="load, every 30s" hx-swap="innerHTML">
+  <p class="muted">loading…</p>
+</div>
+{% endblock %}

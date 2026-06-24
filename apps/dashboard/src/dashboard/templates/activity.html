@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Activity log · {{ brand }}{% endblock %}
+{% block content %}
+<h1>Activity log</h1>
+{# Load once (not auto-polled) so filter selections aren't wiped every tick;
+   the filter bar + Refresh inside the partial re-query on demand (AU-1). #}
+<div id="activity-mount" hx-get="/partials/activity" hx-trigger="load" hx-swap="innerHTML">
+  <div class="panel"><p class="muted">loading activity…</p></div>
+</div>
+{% endblock %}

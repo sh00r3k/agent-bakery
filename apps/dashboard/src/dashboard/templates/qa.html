@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}QA reports{% endblock %}
+{% block content %}
+<h1>QA reports — ultraQA</h1>
+<p class="muted">
+  Functional findings from the agentic tester driving the target dev environment
+  (authenticated as a non-admin user, read-only). Distinct from Security findings.
+</p>
+<button hx-post="/actions/qa/scan" hx-target="#action-result" hx-swap="innerHTML">Run QA scan now</button>
+<div id="action-result"></div>
+<div hx-get="/partials/qa" hx-trigger="load, every 30s" hx-swap="innerHTML">
+  <p class="muted">loading…</p>
+</div>
+{% endblock %}

@@ -1,0 +1,1115 @@
+/* Design system: tokens are the single source of truth. NO hex literals below
+   — reference var(--token) only. See tokens.css + docs/Design.md.
+   tokens.css is linked BEFORE this file in the page <head> (versioned), so no
+   @import is needed here.
+   Aesthetic: "command deck" — atmospheric deep canvas, signal accent, layered
+   panels, instrument-readout metrics, LED status dots, CSS-only interactions. */
+
+* {
+  box-sizing: border-box;
+}
+html {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--content);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  -webkit-font-smoothing: antialiased;
+}
+/* Atmosphere: a faint accent glow bleeding from the top of the canvas, over a
+   perceptible blueprint grid. Fixed so it stays put while content scrolls. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(110% 55% at 50% -8%, var(--glow-top), transparent 60%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size);
+}
+/* Prose blocks opt into the sans face; data/labels stay mono by default. */
+p,
+.prose {
+  font-family: var(--font-sans);
+  line-height: var(--lh-base);
+}
+/* Headings + brand speak in the display face: uppercase, tracked, technical. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-display);
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+a:hover {
+  color: var(--accent-bright);
+}
+/* tabular numerals everywhere metrics/ids appear */
+.num,
+td,
+.metric,
+time,
+code {
+  font-variant-numeric: var(--num-tabular);
+}
+
+/* control-room scrollbars — thin, low-contrast */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-sm);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+.muted {
+  color: var(--content-muted);
+}
+.faint {
+  color: var(--content-faint);
+}
+.warn {
+  color: var(--warn);
+}
+.error {
+  color: var(--danger);
+}
+.ok {
+  color: var(--ok);
+}
+
+/* ── App shell: the "command deck" masthead ─────────────────────────────────
+   A taller bar with a glowing brand tick, a hairline + accent underglow, and
+   mono session info pushed to the right. */
+.topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-5);
+  background: linear-gradient(var(--surface), var(--bg));
+  border-bottom: 1px solid var(--border-hairline);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+/* the accent underglow line beneath the masthead */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent-glow) 18%,
+    var(--accent-glow) 82%,
+    transparent
+  );
+}
+.brand {
+  font-family: var(--font-display);
+  font-weight: var(--fw-black);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--track-wide);
+  color: var(--content);
+  text-transform: uppercase;
+}
+/* glowing live tick before the brand — the command-deck "power on" glyph */
+.brand::before {
+  content: "▮";
+  margin-right: var(--sp-2);
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent-glow);
+  animation: deck-pulse 2.6s var(--ease) infinite;
+}
+.env {
+  color: var(--content-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.who {
+  color: var(--content-faint);
+}
+.spacer {
+  flex: 1;
+}
+.inline {
+  display: inline;
+}
+.link {
+  background: none;
+  border: none;
+  color: var(--content-muted);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+.link:hover {
+  color: var(--accent);
+  filter: none;
+  transform: none;
+}
+
+.layout {
+  display: flex;
+  min-height: calc(100vh - 50px);
+}
+.sidenav {
+  width: 192px;
+  background: var(--surface);
+  border-right: 1px solid var(--border-hairline);
+  padding: var(--sp-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+.sidenav a {
+  position: relative;
+  padding: var(--sp-2) var(--sp-5);
+  color: var(--content-muted);
+  border-left: 2px solid transparent;
+  letter-spacing: 0.02em;
+  transition:
+    color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+}
+.sidenav a:hover {
+  color: var(--content);
+  background: var(--surface-overlay);
+}
+/* active nav: filled accent rail with a glow + accent text */
+.sidenav a.on {
+  background: linear-gradient(90deg, var(--accent-quiet), transparent);
+  border-left: 2px solid var(--accent);
+  color: var(--accent);
+  box-shadow: inset 2px 0 12px -6px var(--accent-glow);
+}
+.content {
+  flex: 1;
+  padding: var(--sp-6) var(--sp-6);
+  min-width: 0;
+}
+
+/* ── Agents status strip: a segmented LED readout ────────────────────────────
+   Inset panel, mono, with glowing dots and tabular figures. */
+.aggbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-raised);
+  margin-bottom: var(--sp-5);
+  font-family: var(--font-mono);
+  font-variant-numeric: var(--num-tabular);
+  color: var(--content-muted);
+}
+.aggbar b {
+  color: var(--content);
+  font-weight: var(--fw-semibold);
+}
+.sep {
+  margin: 0 var(--sp-2);
+  color: var(--border-strong);
+}
+
+/* ── Status dot: a glowing LED. Live (green) dots breathe. ──────────────────── */
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: var(--sp-2);
+  vertical-align: baseline;
+  background: var(--idle);
+}
+.dot.green {
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok-glow);
+  animation: deck-pulse 2.6s var(--ease) infinite;
+}
+.dot.amber {
+  background: var(--warn);
+  box-shadow: 0 0 8px var(--warn-glow);
+}
+.dot.red {
+  background: var(--danger);
+  box-shadow: 0 0 9px var(--danger-glow);
+  animation: deck-blink 1.4s steps(1, end) infinite;
+}
+.dot.grey {
+  background: var(--idle);
+}
+
+@keyframes deck-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes deck-blink {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  61%,
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* =============================================================================
+   FEATURE LAYER — semantic tokens only (no hex, no legacy aliases).
+   ============================================================================= */
+
+/* Page heading — display face, with a short accent rule beneath. One per screen. */
+h1 {
+  font-size: var(--fs-xl);
+  margin: 0 0 var(--sp-5);
+  padding-bottom: var(--sp-2);
+  color: var(--content);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-hairline);
+  position: relative;
+}
+h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 56px;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+h3 {
+  font-size: var(--fs-lg);
+  margin: var(--sp-5) 0 var(--sp-3);
+  color: var(--content-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--track-display);
+}
+
+/* ── Section panel: layered, with the inset highlight + soft drop ───────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-panel);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Agent health tiles — instrument readouts ───────────────────────────────── */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-4);
+}
+.tile {
+  position: relative;
+  background: linear-gradient(var(--surface-raised), var(--surface));
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-raised);
+  padding: var(--sp-4);
+  overflow: hidden;
+  transition:
+    border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+.tile:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-raised),
+    0 0 0 1px var(--border-strong);
+}
+/* status edge: a glowing top bar that reads as a panel-state LED strip */
+.tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--idle);
+}
+.tile.green::before {
+  background: var(--ok);
+  box-shadow: 0 0 10px var(--ok-glow);
+}
+.tile.amber::before {
+  background: var(--warn);
+  box-shadow: 0 0 10px var(--warn-glow);
+}
+.tile.red::before {
+  background: var(--danger);
+  box-shadow: 0 0 10px var(--danger-glow);
+}
+.tile.grey::before {
+  background: var(--idle);
+}
+.tile header {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--track-display);
+  text-transform: uppercase;
+  margin-bottom: var(--sp-3);
+  color: var(--content);
+  display: flex;
+  align-items: center;
+}
+.tile .meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  color: var(--content-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: var(--num-tabular);
+}
+.tile footer {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Big metric number (support stats) — hero instrument readout. */
+.stat-n {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-black);
+  font-variant-numeric: var(--num-tabular);
+  color: var(--content);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+}
+
+/* ── Buttons: primary (glowing accent) + ghost (outlined secondary) ─────────── */
+button {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: 1px solid transparent;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  transition:
+    filter var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+button:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 16px -2px var(--accent-glow);
+}
+button:active {
+  transform: translateY(1px);
+}
+/* Ghost: secondary / destructive-confirm. Demoted next to the one primary.
+   Class-only selector so an <a class="btn-ghost"> (e.g. the audit-export
+   download links) shares the look; the layout props below cover anchors that
+   don't inherit the base `button {}` rule. */
+.btn-ghost {
+  display: inline-block;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--content-muted);
+  border: 1px solid var(--border-hairline);
+  transition:
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+}
+.btn-ghost:hover {
+  filter: none;
+  box-shadow: none;
+  color: var(--content);
+  border-color: var(--border-strong);
+  background: var(--surface-overlay);
+}
+
+/* ── Data table / grid: compact rows, header band, accent hover rail ────────── */
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--sp-3);
+  font-variant-numeric: var(--num-tabular);
+}
+.grid th,
+.grid td {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.grid th {
+  color: var(--content-muted);
+  font-family: var(--font-mono);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-display);
+  border-bottom: 1px solid var(--border-strong);
+}
+.grid tbody tr {
+  box-shadow: inset 2px 0 0 transparent;
+  transition:
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+.grid tbody tr:hover {
+  background: var(--surface-overlay);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* ── Badge: small quiet mono pill. Severity → status -bg fill + solid text. ── */
+.badge {
+  display: inline-block;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--content);
+}
+.badge.info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+.badge.low {
+  background: var(--idle-bg);
+  color: var(--idle);
+}
+.badge.warning,
+.badge.medium {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.badge.critical,
+.badge.high {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ── Pill: chip for counts / product switch ────────────────────────────────── */
+.pill {
+  display: inline-block;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 3px var(--sp-3);
+  margin-right: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+a.pill {
+  text-decoration: none;
+  color: var(--content-muted);
+}
+a.pill:hover {
+  background: var(--surface-overlay);
+  color: var(--content);
+}
+.pill.on {
+  background: var(--accent-quiet);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px -4px var(--accent-glow);
+}
+.counts {
+  margin: var(--sp-3) 0;
+}
+.report-title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--track-display);
+  text-transform: uppercase;
+  color: var(--content);
+}
+.sep-l {
+  margin-left: var(--sp-3);
+}
+
+/* Action toolbar: a row of buttons (one primary, the rest demoted). */
+.toolbar {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Feed list (PM digests / action items) ─────────────────────────────────── */
+.feed {
+  list-style: none;
+  padding: 0;
+  margin: var(--sp-2) 0;
+}
+.feed li {
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+/* ── Cost bar: glowing accent fill ─────────────────────────────────────────── */
+.bar {
+  display: inline-block;
+  height: 10px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+  border-radius: var(--r-sm);
+  box-shadow: 0 0 10px -2px var(--accent-glow);
+  vertical-align: middle;
+}
+
+/* ── Cost-by-model: stacked daily bar chart (1 bar = 1 day) ───────────────── */
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.panel-head h2 {
+  font-size: var(--fs-lg);
+  margin: 0;
+}
+.costchart {
+  display: flex;
+  gap: var(--sp-6);
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+.costchart-plot {
+  flex: 1 1 420px;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-1);
+  height: 170px;
+  padding-top: var(--sp-2);
+}
+.cbar {
+  flex: 1 1 0;
+  min-width: 6px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.cbar-stack {
+  width: 100%;
+  height: var(--bar-h, 0%);
+  display: flex;
+  flex-direction: column-reverse; /* first segment sits at the bottom */
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  overflow: hidden;
+  transition: height var(--dur) ease;
+}
+.cseg {
+  height: var(--seg-h, 0%);
+  width: 100%;
+}
+.cbar-label {
+  font-size: var(--fs-xs);
+  color: var(--content-faint);
+  white-space: nowrap;
+}
+.costchart-legend {
+  flex: 0 0 auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--fs-md);
+}
+.costchart-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--content-muted);
+}
+.costchart-legend b {
+  color: var(--content);
+  margin-left: auto;
+}
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-sm);
+}
+.cseg.c0,
+.swatch.c0 {
+  background: var(--chart-1);
+}
+.cseg.c1,
+.swatch.c1 {
+  background: var(--chart-2);
+}
+.cseg.c2,
+.swatch.c2 {
+  background: var(--chart-3);
+}
+.cseg.c3,
+.swatch.c3 {
+  background: var(--chart-4);
+}
+.cseg.c4,
+.swatch.c4 {
+  background: var(--chart-5);
+}
+.cseg.c5,
+.swatch.c5 {
+  background: var(--chart-6);
+}
+
+/* ── Login: a single focused panel glowing on the deep canvas ──────────────── */
+.login-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow:
+    var(--shadow-panel),
+    0 0 60px -20px var(--accent-glow);
+  padding: var(--sp-7);
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.login-card h1 {
+  font-size: var(--fs-2xl);
+  margin: 0;
+  padding: 0;
+  border: none;
+  letter-spacing: var(--track-wide);
+}
+.login-card h1::after {
+  display: none;
+}
+/* glowing accent tick echoes the masthead brand glyph */
+.login-card h1::before {
+  content: "▮ ";
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+.login-card input {
+  padding: var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  color: var(--content);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  transition: border-color var(--dur) var(--ease);
+}
+.login-card input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-quiet);
+}
+
+.rowlink:hover {
+  background: var(--surface-overlay);
+}
+.rowlink.clickable {
+  cursor: pointer;
+}
+
+/* ── Toast / action result: transient, accent-edged, floats over the deck ──── */
+#action-result:not(:empty),
+#webext-run-result:not(:empty) {
+  display: block;
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-hairline);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-overlay);
+}
+
+/* ── HTMX micro-interaction: staggered fade-in on swap ─────────────────────── */
+@keyframes agents-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.htmx-settling .tile,
+.htmx-settling .grid tbody tr,
+.htmx-settling .feed li {
+  animation: agents-fade-in var(--dur-slow) var(--ease) both;
+}
+.htmx-settling .tile:nth-child(2),
+.htmx-settling .grid tbody tr:nth-child(2),
+.htmx-settling .feed li:nth-child(2) {
+  animation-delay: 35ms;
+}
+.htmx-settling .tile:nth-child(3),
+.htmx-settling .grid tbody tr:nth-child(3),
+.htmx-settling .feed li:nth-child(3) {
+  animation-delay: 70ms;
+}
+.htmx-settling .tile:nth-child(4),
+.htmx-settling .grid tbody tr:nth-child(4),
+.htmx-settling .feed li:nth-child(4) {
+  animation-delay: 105ms;
+}
+.htmx-request.htmx-swapping {
+  opacity: 0.5;
+  transition: opacity var(--dur) var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .htmx-settling .tile,
+  .htmx-settling .grid tbody tr,
+  .htmx-settling .feed li,
+  .dot.green,
+  .dot.red,
+  .brand::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =============================================================================
+   v0.2 UI — workspace switcher, PAT mint, activity feed, privacy.
+   Intent-named tokens only; NO hex (tokens.css is the single source of truth).
+   ============================================================================= */
+
+/* topbar workspace switcher (Pattern 1) */
+.ws-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-right: var(--sp-3);
+}
+.ws-switch .ws-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--content-faint);
+}
+
+/* PAT mint form fields + one-time reveal (Pattern 3) */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.field label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--content-muted);
+}
+.field input,
+.field select {
+  padding: var(--sp-2);
+  background: var(--bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  color: var(--content);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  transition: border-color var(--dur) var(--ease);
+}
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-quiet);
+}
+.token-secret {
+  margin-top: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  border-radius: var(--r-md);
+}
+.token-secret code {
+  display: block;
+  margin: var(--sp-2) 0;
+  padding: var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  word-break: break-all;
+  user-select: all;
+}
+.pat-revoke {
+  color: var(--danger);
+}
+
+/* activity feed rows (Pattern 4) */
+.act-feed {
+  margin: var(--sp-2) 0;
+}
+.act-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.act-row time {
+  color: var(--content-faint);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.act-row .act-meta {
+  color: var(--content-faint);
+  font-size: var(--fs-xs);
+}
+
+/* =============================================================================
+   v0.3 slice — grouped nav, agent detail, row triage, severity tints, filters.
+   Intent-named tokens only; NO hex (tokens.css is the single source of truth).
+   ============================================================================= */
+
+/* grouped sidenav: a faint section label above each cluster of links (G-3) */
+.nav-group-label {
+  padding: var(--sp-4) var(--sp-5) var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--content-faint);
+}
+
+/* clickable tile title (overview / node-health → agent detail, AG-2) */
+.tile-title {
+  color: var(--content);
+}
+.tile-title:hover {
+  color: var(--accent-bright);
+}
+.detail-link {
+  margin-left: auto;
+}
+.crumb {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  margin: 0 0 var(--sp-3);
+}
+
+/* small in-row buttons for triage (I-1 / F-1) — primary mini; ghost variants
+   reuse the existing .btn-ghost primitive (Design.md §3), so a <button> demoted
+   action is `class="btn-ghost mini"` — one ghost system, not two. */
+button.mini,
+.btn-ghost.mini {
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button:disabled:hover {
+  filter: none;
+  box-shadow: none;
+}
+.row-actions {
+  display: flex;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.row-actions form {
+  margin: 0;
+}
+
+/* severity row tint: a left rail in the matching status color (H-2 — the
+   .sev-* classes were emitted with no CSS). Hover still shows the accent rail. */
+.grid tbody tr.sev-critical,
+.grid tbody tr.sev-high {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+.grid tbody tr.sev-warning,
+.grid tbody tr.sev-medium {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+.grid tbody tr.sev-info {
+  box-shadow: inset 3px 0 0 var(--info);
+}
+.grid tbody tr.sev-low {
+  box-shadow: inset 3px 0 0 var(--idle);
+}
+/* box-shadow is not additive: re-assert the sev rail on hover so the status
+   signal doesn't blink out to the accent hover rail while the operator acts on
+   the row (the hover background still applies from the base tr:hover rule). */
+.grid tbody tr.sev-critical:hover,
+.grid tbody tr.sev-high:hover {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+.grid tbody tr.sev-warning:hover,
+.grid tbody tr.sev-medium:hover {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+.grid tbody tr.sev-info:hover {
+  box-shadow: inset 3px 0 0 var(--info);
+}
+.grid tbody tr.sev-low:hover {
+  box-shadow: inset 3px 0 0 var(--idle);
+}
+/* a triaged (resolved/snoozed) incident is demoted, not hidden */
+.grid tbody tr.is-triaged {
+  opacity: 0.5;
+}
+
+/* cost bar width comes from a per-row --bar-w custom prop (H-4 — was inline px) */
+.bar {
+  width: var(--bar-w, 0%);
+}
+
+/* ── Agent detail: instrument metric stats + heartbeat strip (AG-1) ─────────── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.metric-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-raised);
+  padding: var(--sp-4);
+}
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--track-display);
+  color: var(--content-muted);
+}
+.metric-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-black);
+  font-variant-numeric: var(--num-tabular);
+  color: var(--content);
+  line-height: 1.05;
+}
+.hb-strip {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin: var(--sp-2) 0;
+}
+.hb {
+  width: 8px;
+  height: 18px;
+  border-radius: var(--r-sm);
+  background: var(--idle);
+}
+.hb.up {
+  background: var(--ok);
+  box-shadow: 0 0 6px -1px var(--ok-glow);
+}
+.hb.down {
+  background: var(--danger);
+  box-shadow: 0 0 6px -1px var(--danger-glow);
+}
+
+/* ── Activity filter bar (AU-1) ─────────────────────────────────────────────── */
+.filterbar {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin: var(--sp-3) 0;
+}
+.filterbar .field {
+  min-width: 130px;
+}
+.filterbar .field span {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--content-muted);
+}

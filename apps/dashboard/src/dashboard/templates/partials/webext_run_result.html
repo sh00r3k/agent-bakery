@@ -1,0 +1,7 @@
+{% if state == "started" %}
+  <p class="ok" role="status">✓ pipeline run started — <code>{{ run_id }}</code></p>
+{% elif state == "running" %}
+  <p class="warn" role="status">⚠ a pipeline run is already in progress — try again once it finishes.</p>
+{% else %}
+  <p class="warn" role="status">⚠ web-ext control offline: {{ reason }}</p>
+{% endif %}

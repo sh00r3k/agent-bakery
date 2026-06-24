@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ brand }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/tokens.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/static/dash.css?v={{ asset_v }}">
+  <script src="/static/htmx.min.js"></script>
+</head>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+  <header class="topbar">
+    <span class="brand">{{ brand }}</span>
+    <span class="env">env: {{ env }}</span>
+    <span class="spacer"></span>
+    <span class="who">{{ principal.sub }} ({{ principal.role }})</span>
+    {% if workspaces is defined %}{% include "_workspace_switcher.html" %}{% endif %}
+    <form method="post" action="/logout" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="link">logout</button>
+    </form>
+  </header>
+  <div class="layout">
+    <nav class="sidenav">
+      <a href="/" class="{% if active=='overview' %}on{% endif %}">Agents overview</a>
+
+      <span class="nav-group-label">Agents</span>
+      <a href="/agents" class="{% if active=='agents' %}on{% endif %}">Agents</a>
+      <a href="/workspace" class="{% if active=='workspace' %}on{% endif %}">Workspace</a>
+
+      <span class="nav-group-label">Observability</span>
+      <a href="/incidents" class="{% if active=='incidents' %}on{% endif %}">Incidents</a>
+      <a href="/qa" class="{% if active=='qa' %}on{% endif %}">QA reports</a>
+      <a href="/cost" class="{% if active=='cost' %}on{% endif %}">LLM cost</a>
+      <a href="/activity" class="{% if active=='activity' %}on{% endif %}">Activity log</a>
+      <a href="/pipeline" class="{% if active=='pipeline' %}on{% endif %}">Pipeline</a>
+
+      <span class="nav-group-label">Security</span>
+      <a href="/findings" class="{% if active=='findings' %}on{% endif %}">Security findings</a>
+      <a href="/privacy" class="{% if active=='privacy' %}on{% endif %}">Privacy</a>
+
+      <span class="nav-group-label">Product</span>
+      <a href="/pm" class="{% if active=='pm' %}on{% endif %}">PM digests</a>
+
+      <span class="nav-group-label">Settings</span>
+      <a href="/tokens" class="{% if active=='tokens' %}on{% endif %}">Access tokens</a>
+    </nav>
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

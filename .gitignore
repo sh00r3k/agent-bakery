@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtualenvs / uv
+.venv/
+.uv/
+
+# Env / secrets (env.example files are committed; real .env is not)
+.env
+.env.*
+!env.example
+
+# Caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+
+# Frontend / built assets
+node_modules/
+**/static/widget/
+**/static/staff/
+**/static/assets/
+
+# OS / editor
+.DS_Store
+*.swp
+.claude/
+
+# Private CD (environment-specific; kept out of the public repo)
+.github/workflows/deploy.yml

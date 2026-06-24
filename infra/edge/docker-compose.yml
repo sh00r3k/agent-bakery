@@ -1,0 +1,29 @@
+# Edge reverse proxy (Caddy) — TLS termination + subdomain routing for your agents.
+# Containerized on purpose: the host's system nginx is masked, so we don't
+# unmask/operate it. Binds host 80/443 (free on this host) and reaches agents
+# by container name over the shared agent_backend network.
+services:
+  edge-caddy:
+    image: caddy:2-alpine
+    container_name: edge-caddy
+    # Host networking: Caddy binds host :80/:443 directly in the host netns.
+    # ufw already accepts 80/443 on INPUT; this sidesteps the docker-proxy/DNAT
+    # return-path issue that left published ports unreachable externally. It
+    # reaches agents via their loopback host ports (127.0.0.1:800X).
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 96M
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

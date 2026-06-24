@@ -1,0 +1,24 @@
+{% if unavailable %}
+  <p class="warn">⚠ web-ext control offline: {{ unavailable }}</p>
+{% else %}
+<div class="panel">
+<table class="grid">
+  <thead><tr><th>run</th><th>status</th><th>domains</th><th>count</th><th>USD</th><th>started</th><th>ended</th></tr></thead>
+  <tbody>
+  {% for r in runs %}
+    <tr>
+      <td><code>{{ r.run_id }}</code></td>
+      <td>{{ r.status }}</td>
+      <td>{{ (r.domains or [])|join(', ') }}</td>
+      <td>{{ r.count }}</td>
+      <td>${{ '%.2f'|format(r.cost_usd or 0.0) }}</td>
+      <td>{{ r.started_at or '—' }}</td>
+      <td>{{ r.ended_at or '—' }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="muted">no runs</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}

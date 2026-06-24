@@ -1,0 +1,11 @@
+# Edge reverse proxy for your agents. Caddy auto-provisions Let's Encrypt
+# TLS. Runs as a container on agent_backend. Add more agents as subdomains here.
+{
+	email ops@example.com
+}
+
+# Caddy reaches agents by their loopback ports. Everything → the dashboard;
+# add more agents as subdomains or path routes here.
+agents.example.com {
+	reverse_proxy 127.0.0.1:8005
+}

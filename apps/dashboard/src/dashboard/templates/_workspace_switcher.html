@@ -1,0 +1,21 @@
+{# Workspace switcher — top-bar partial (Pattern 1).
+
+Renders the principal's workspaces as count-chip pills; the current one is
+marked `.on`. v0.2 sources a single workspace (the principal's tenant) — see
+panel_routes.list_workspaces. Cross-tenant switching lands in v0.3.
+
+Variables (merged into every page context by api._page_ctx):
+- workspaces: list[{tenant_id, display_name, is_current}]
+- current_tenant_id: str
+
+Design ref: docs/design-ui-inspiration.md §"Pattern 1 — Workspace container".
+#}
+<span class="ws-switch" aria-label="Workspace">
+  <span class="ws-label">ws</span>
+  {% for ws in workspaces %}
+    <a class="pill {% if ws.is_current or ws.tenant_id == current_tenant_id %}on{% endif %}"
+       href="?tenant_id={{ ws.tenant_id }}">{{ ws.display_name }}</a>
+  {% else %}
+    <span class="pill on">{{ current_tenant_id }}</span>
+  {% endfor %}
+</span>

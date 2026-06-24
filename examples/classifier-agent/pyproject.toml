@@ -1,0 +1,28 @@
+[project]
+name = "classifier-agent"
+version = "0.1.0"
+description = "Reference agent: schema-validated LLM text classification with untrusted-input fencing and a deterministic fallback."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [{ name = "sh00r3k", email = "sh00r3k@gmail.com" }]
+keywords = ["agent", "classifier", "langgraph", "llm", "example"]
+dependencies = [
+    "agentkit",
+    "langgraph>=0.2.50",
+    "pydantic>=2.9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["classifier_agent"]
+
+# This example lives under examples/ and is intentionally NOT a uv workspace
+# member (the root globs packages/*, agents/*, apps/* only), so it never enters
+# `uv sync`. Promoting it to a real agent = move it under agents/ and add the
+# workspace source below back in:
+#   [tool.uv.sources]
+#   agentkit = { workspace = true }

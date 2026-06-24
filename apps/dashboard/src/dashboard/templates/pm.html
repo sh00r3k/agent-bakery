@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}PM digests{% endblock %}
+{% block content %}
+<h1>PM digests / action-items</h1>
+<div hx-get="/partials/pm" hx-trigger="load, every 60s" hx-swap="innerHTML">
+  <p class="muted">loading…</p>
+</div>
+{% endblock %}

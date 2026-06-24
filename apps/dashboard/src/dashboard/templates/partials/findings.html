@@ -1,0 +1,50 @@
+{# Security findings + operator triage (F-1). Triage proxies to the owning
+   agent's /findings/resolve; the row drops out of the signal view on resolve.
+   Root id lets a triage POST swap it back in place. #}
+<div id="findings-panel">
+{% if unavailable %}
+  <p class="error">⚠ security agent unreachable: {{ unavailable }}.</p>
+{% else %}
+<div class="panel">
+<table class="grid">
+  <thead><tr><th>sev</th><th>target</th><th>check</th><th>status</th><th>remediation</th><th>last seen</th><th>triage</th></tr></thead>
+  <tbody>
+  {% for f in findings %}
+    <tr class="sev-{{ f.severity }}">
+      <td><span class="badge {{ f.severity }}">{{ f.severity }}</span></td>
+      <td>{{ f.target }}</td>
+      <td>{{ f.check }}</td>
+      <td>{{ f.status }}</td>
+      <td>{{ f.remediation }}</td>
+      <td>{{ f.last_seen }}</td>
+      <td class="row-actions">
+        {% set dk = f.dedup_key or f.id %}
+        <form class="inline" hx-post="/actions/finding/resolve" hx-target="#findings-panel" hx-swap="outerHTML">
+          <input type="hidden" name="source" value="findings">
+          <input type="hidden" name="dedup_key" value="{{ dk }}">
+          <input type="hidden" name="status" value="fixed">
+          <button class="mini">fixed</button>
+        </form>
+        <form class="inline" hx-post="/actions/finding/resolve" hx-target="#findings-panel" hx-swap="outerHTML"
+              hx-confirm="Dismiss this finding as not-a-bug?">
+          <input type="hidden" name="source" value="findings">
+          <input type="hidden" name="dedup_key" value="{{ dk }}">
+          <input type="hidden" name="status" value="dismissed">
+          <button class="btn-ghost mini">dismiss</button>
+        </form>
+        <form class="inline" hx-post="/actions/finding/resolve" hx-target="#findings-panel" hx-swap="outerHTML">
+          <input type="hidden" name="source" value="findings">
+          <input type="hidden" name="dedup_key" value="{{ dk }}">
+          <input type="hidden" name="status" value="wontfix">
+          <button class="btn-ghost mini">won't fix</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="muted">No findings — nothing to triage. Run a scan to refresh.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+</div>

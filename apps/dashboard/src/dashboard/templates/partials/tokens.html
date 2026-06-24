@@ -1,0 +1,42 @@
+{# Token list fragment (Pattern 3). Context: unavailable, tokens[].
+   NEVER renders a secret — only display metadata + a revoke action. #}
+<section class="panel">
+  <header class="aggbar">
+    <span class="dot {{ 'grey' if unavailable else 'green' }}"></span> personal access tokens
+    {% if tokens %}<span class="sep">·</span> <b>{{ tokens | length }}</b>{% endif %}
+  </header>
+  {% if unavailable %}
+    <p class="error">tokens unavailable — {{ unavailable }}.</p>
+  {% elif tokens %}
+    <table class="grid">
+      <thead>
+        <tr><th>name</th><th>prefix</th><th>scope</th><th>role</th><th>expires</th><th>status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for t in tokens %}
+          <tr>
+            <td>{{ t.name }}</td>
+            <td><code class="num">{{ t.prefix }}…</code></td>
+            <td>{{ t.scope }}</td>
+            <td><span class="badge {{ 'high' if t.role == 'admin' else 'warning' if t.role == 'manager' else 'info' }}">{{ t.role }}</span></td>
+            <td class="faint">{{ t.expires_at }}</td>
+            <td>
+              {% if t.revoked_at %}<span class="badge high">revoked</span>
+              {% else %}<span class="badge low">active</span>{% endif %}
+            </td>
+            <td>
+              {% if not t.revoked_at %}
+                <button class="btn-ghost pat-revoke"
+                        hx-post="/actions/token/revoke" hx-vals='{"id": {{ t.id }}}'
+                        hx-target="#token-list" hx-swap="innerHTML"
+                        hx-confirm="Revoke token «{{ t.name }}»? This cannot be undone.">revoke</button>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">No tokens yet. Mint one above for a cron job, script, or CI pipeline.</p>
+  {% endif %}
+</section>

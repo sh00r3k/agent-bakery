@@ -1,0 +1,106 @@
+# Reference compose for an agentkit-based agent. Joins the EXISTING shared
+# `agent_backend` network — it does NOT start its own Postgres/Redis/RabbitMQ.
+# Mirrors a hardened host stack (cap_drop, no-new-privileges, resource limits,
+# healthcheck). Run from this directory: `docker compose up -d`.
+services:
+  monitoring_agent:
+    build:
+      # Repo root as context so the workspace package agentkit is available.
+      context: ../..
+      dockerfile: agents/monitoring/Dockerfile
+    container_name: monitoring_agent
+    env_file: .env
+    # Chat LLM gateway + local Ollama embeddings live on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - agent_backend
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Stateless service: lock the root filesystem read-only with a writable tmpfs
+    # for /tmp only.
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Host /proc/meminfo mounted read-only so host-vitals (RAM/swap) reflect the
+    # HOST, not the container's cgroup view (Plan 2 §1). Set HOST_MEMINFO_PATH to
+    # the mount target in .env.
+    volumes:
+      - /proc/meminfo:/host/proc/meminfo:ro
+    # Bind only to loopback on the host; nginx terminates TLS and proxies in.
+    ports:
+      - "127.0.0.1:8002:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
+    restart: unless-stopped
+
+  # Read-only Docker API proxy for meta-monitoring (Plan 2 §2). The monitor talks
+  # to this on the agent_backend network at http://docker-socket-proxy:2375,
+  # NEVER the raw socket: only GET container-state verbs are exposed (CONTAINERS
+  # read access; all POST/exec/write verbs stay disabled). The raw socket is
+  # mounted :ro into the PROXY only — not into the monitoring agent.
+  docker-socket-proxy:
+    # Pinned (was :latest) so an image bump can't silently change the verb gate.
+    image: tecnativa/docker-socket-proxy:0.3.0
+    container_name: docker-socket-proxy
+    environment:
+      # --- ALLOW (read-only GET surface the monitor needs) ---
+      CONTAINERS: 1
+      INFO: 1
+      VERSION: 1
+      PING: 1
+      LOGS: 1
+      # --- DENY everything else (explicit 0 = 403; parity with the root compose
+      #     and infra/docker-socket-proxy.yml denylist) ---
+      POST: 0
+      EXEC: 0
+      AUTH: 0
+      SECRETS: 0
+      CONFIGS: 0
+      SWARM: 0
+      NODES: 0
+      TASKS: 0
+      SERVICES: 0
+      PLUGINS: 0
+      VOLUMES: 0
+      NETWORKS: 0
+      IMAGES: 0
+      BUILD: 0
+      COMMIT: 0
+      SYSTEM: 0
+      DISTRIBUTION: 0
+      SESSION: 0
+      EVENTS: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - agent_backend
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /run
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+    restart: unless-stopped
+
+networks:
+  agent_backend:
+    external: true
+    name: agent_backend

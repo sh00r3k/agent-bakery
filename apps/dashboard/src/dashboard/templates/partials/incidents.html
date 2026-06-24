@@ -1,0 +1,60 @@
+{# Incidents feed + operator triage overlay (I-1). Root carries a stable id so a
+   triage POST can swap it back in place; the page shell keeps polling its div.
+   Context (views.incidents_context): unavailable, incidents[], triage{dedup_key}. #}
+<div id="incidents-panel">
+{% if unavailable %}
+  <p class="error">⚠ monitoring agent unreachable: {{ unavailable }}.</p>
+{% else %}
+<div class="panel">
+<table class="grid">
+  <thead><tr><th>sev</th><th>title</th><th>source</th><th>×</th><th>state</th><th>last seen</th><th>triage</th></tr></thead>
+  <tbody>
+  {% for i in incidents %}
+    {% set dk = i.dedup_key or i.id %}
+    {% set t = triage.get(dk) %}
+    <tr class="sev-{{ i.severity }}{% if t and t.status in ('resolved', 'snoozed') %} is-triaged{% endif %}">
+      <td><span class="badge {{ i.severity }}">{{ i.severity }}</span></td>
+      <td>{{ i.title }}</td>
+      <td>{{ i.source }}</td>
+      <td>{{ i.count }}</td>
+      <td>
+        {% if t %}<span class="badge {{ 'low' if t.status in ('resolved','snoozed') else 'warning' }}">{{ t.status }}</span>
+        {% else %}{{ i.status }}{% endif %}
+      </td>
+      <td>{{ i.last_seen }}</td>
+      <td class="row-actions">
+        {% if t and t.status in ('resolved', 'snoozed') %}
+          <form class="inline" hx-post="/actions/incident/triage" hx-target="#incidents-panel" hx-swap="outerHTML">
+            <input type="hidden" name="dedup_key" value="{{ dk }}">
+            <input type="hidden" name="status" value="open">
+            <button class="btn-ghost mini">reopen</button>
+          </form>
+        {% else %}
+          <form class="inline" hx-post="/actions/incident/triage" hx-target="#incidents-panel" hx-swap="outerHTML">
+            <input type="hidden" name="dedup_key" value="{{ dk }}">
+            <input type="hidden" name="status" value="acknowledged">
+            <button class="btn-ghost mini"{% if t and t.status=='acknowledged' %} disabled{% endif %}>ack</button>
+          </form>
+          <form class="inline" hx-post="/actions/incident/triage" hx-target="#incidents-panel" hx-swap="outerHTML"
+                hx-confirm="Snooze «{{ i.title }}»?">
+            <input type="hidden" name="dedup_key" value="{{ dk }}">
+            <input type="hidden" name="status" value="snoozed">
+            <button class="btn-ghost mini">snooze</button>
+          </form>
+          <form class="inline" hx-post="/actions/incident/triage" hx-target="#incidents-panel" hx-swap="outerHTML"
+                hx-confirm="Resolve «{{ i.title }}»?">
+            <input type="hidden" name="dedup_key" value="{{ dk }}">
+            <input type="hidden" name="status" value="resolved">
+            <button class="mini">resolve</button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="muted">No incidents — all agents are calm. Run a sweep to refresh.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+</div>

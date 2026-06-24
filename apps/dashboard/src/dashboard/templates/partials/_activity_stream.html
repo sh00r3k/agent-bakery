@@ -1,0 +1,18 @@
+{# Reusable activity stream — expects `events` (list of audit rows) in scope.
+   Each row: {ts, actor, action, resource, metadata}. Render-only; no hx-*. #}
+{% set _tone = {
+  "login": "info", "sweep": "low", "scan": "low",
+  "token-mint": "warning", "token-revoke": "high",
+  "webext-run": "low",
+} %}
+<div class="act-feed">
+  {% for e in events %}
+    <div class="act-row">
+      <time datetime="{{ e.ts }}">{{ e.ts }}</time>
+      <span class="badge {{ _tone.get(e.action, 'info') }}">{{ e.action }}</span>
+      <code class="num">{{ e.actor }}</code>
+      {% if e.resource %}<span class="act-meta">{{ e.resource }}</span>{% endif %}
+      {% if e.metadata %}<span class="act-meta faint">{{ e.metadata }}</span>{% endif %}
+    </div>
+  {% endfor %}
+</div>

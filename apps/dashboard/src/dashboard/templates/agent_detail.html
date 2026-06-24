@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ slug }} · {{ brand }}{% endblock %}
+{% block content %}
+<p class="crumb"><a href="/agents">← Agents</a></p>
+<h1>{{ slug }}</h1>
+<div hx-get="/partials/agent/{{ slug }}" hx-trigger="load, every 10s" hx-swap="innerHTML">
+  <div class="panel"><p class="muted">loading agent…</p></div>
+</div>
+{% endblock %}

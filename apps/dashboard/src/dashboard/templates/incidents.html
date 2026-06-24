@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Incidents{% endblock %}
+{% block content %}
+<h1>Incidents</h1>
+<button hx-post="/actions/sweep" hx-target="#action-result" hx-swap="innerHTML">Run sweep now</button>
+<div id="action-result"></div>
+<div hx-get="/partials/incidents" hx-trigger="load, every 30s" hx-swap="innerHTML">
+  <p class="muted">loading…</p>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{# ultraQA signal + operator triage (F-2). Resolve/dismiss proxy to the ultraQA
+   agent's /findings/resolve. Root id lets a triage POST swap it in place. #}
+<div id="qa-panel">
+{% if unavailable %}
+  <p class="error">⚠ ultraQA unreachable: {{ unavailable }}.</p>
+{% else %}
+{% if coverage %}
+<div class="panel">
+  <strong>Coverage</strong>: {{ coverage.coverage_pct }}% &nbsp;·&nbsp;
+  explored {{ coverage.explored }} &nbsp;/&nbsp; unexplored {{ coverage.unexplored }}
+  &nbsp;/&nbsp; blocked {{ coverage.blocked }}
+  {% if auto_closed %}&nbsp;·&nbsp;<span class="muted">{{ auto_closed }} auto-closed (verified non-bugs)</span>{% endif %}
+</div>
+{% endif %}
+<div class="panel">
+<table class="grid">
+  <thead><tr><th>sev</th><th>status</th><th>check</th><th>target</th><th>title</th><th>verifier rationale</th><th>×</th><th>triage</th></tr></thead>
+  <tbody>
+  {% for f in findings %}
+    <tr class="sev-{{ f.severity }}">
+      <td><span class="badge {{ f.severity }}">{{ f.severity }}</span></td>
+      <td>{{ f.status }}{% if f.confidence %} <span class="muted">({{ '%.0f'|format(f.confidence*100) }}%)</span>{% endif %}</td>
+      <td>{{ f.check }}</td>
+      <td>{{ f.target }}</td>
+      <td>{{ f.title }}</td>
+      <td class="muted">{{ f.rationale or '' }}</td>
+      <td>{{ f.count }}</td>
+      <td class="row-actions">
+        {% set dk = f.dedup_key or f.id %}
+        <form class="inline" hx-post="/actions/finding/resolve" hx-target="#qa-panel" hx-swap="outerHTML">
+          <input type="hidden" name="source" value="qa">
+          <input type="hidden" name="dedup_key" value="{{ dk }}">
+          <input type="hidden" name="status" value="fixed">
+          <button class="mini">fixed</button>
+        </form>
+        <form class="inline" hx-post="/actions/finding/resolve" hx-target="#qa-panel" hx-swap="outerHTML"
+              hx-confirm="Dismiss this finding as not-a-bug?">
+          <input type="hidden" name="source" value="qa">
+          <input type="hidden" name="dedup_key" value="{{ dk }}">
+          <input type="hidden" name="status" value="dismissed">
+          <button class="btn-ghost mini">dismiss</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="8" class="muted">No open signal — verifier auto-closed all noise, or no sweep yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+</div>

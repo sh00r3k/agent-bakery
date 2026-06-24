@@ -1,0 +1,9 @@
+{# One-time secret reveal (Pattern 3). The plaintext token exists ONLY in this
+   response — it is never stored and cannot be shown again. On render it also
+   refreshes the token list (#token-list) so the new row appears. #}
+<div class="token-secret"
+     hx-get="/partials/tokens" hx-trigger="load" hx-target="#token-list" hx-swap="innerHTML">
+  <b>Token «{{ name }}» created — copy it now, it is shown ONCE.</b>
+  <code>{{ secret }}</code>
+  <span class="faint">role: {{ role }} · expires: {{ expires_at }}</span>
+</div>

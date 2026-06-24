@@ -1,0 +1,44 @@
+[project]
+name = "dashboard"
+version = "0.1.0"
+description = "Agent ops console — server-rendered (HTMX + Jinja2) dashboard that fans out across your agents over HTTP."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "sh00r3k", email = "sh00r3k@gmail.com" }
+]
+keywords = ["dashboard", "ops", "htmx", "agents", "console"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: POSIX :: Linux",
+    "License :: OSI Approved :: Apache Software License",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development",
+]
+# No langgraph: the dashboard's "graph" is HTTP fan-out across the agents, not an
+# LLM graph. It is an HTTP client of the other agents (httpx) rendering server-
+# side HTML (jinja2 + htmx). python-multipart is for the /login form post.
+dependencies = [
+    "agentkit",
+    "fastapi>=0.115",
+    "jinja2>=3.1",
+    "httpx>=0.27",
+    "python-multipart>=0.0.9",
+    "uvicorn>=0.30",
+]
+
+[project.scripts]
+dashboard = "dashboard.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dashboard"]
+
+[tool.uv.sources]
+agentkit = { workspace = true }

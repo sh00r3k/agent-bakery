@@ -1,0 +1,37 @@
+{# Local-first trust panel tied to Private Mode. Context: private_mode,
+   otel_enabled, allowed[]. No raw DSNs — host:port only. #}
+<section class="panel">
+  <header class="aggbar">
+    <span class="dot {{ 'green' if private_mode else 'amber' }}"></span>
+    Private Mode <b>{{ "ON" if private_mode else "OFF" }}</b>
+  </header>
+  {% if private_mode %}
+    <p class="ok">Your data stays here. Zero outbound traffic except the egress allow-list below;
+    the OpenTelemetry exporter is disabled regardless of its flag.</p>
+  {% else %}
+    <p class="warn">Private Mode is off. The agents may emit traces/telemetry to the configured
+    sinks. Set <code>PRIVATE_MODE=true</code> for a zero-outbound posture (enforced in code; pair
+    with firewall rules for a true air-gap).</p>
+  {% endif %}
+  <div class="counts">
+    <span class="badge {{ 'low' if not otel_enabled else 'warning' }}">OTel {{ "on" if otel_enabled else "off" }}</span>
+  </div>
+</section>
+
+<section class="panel">
+  <header class="aggbar"><span class="dot grey"></span> egress allow-list</header>
+  {% if allowed %}
+    <table class="grid">
+      <thead><tr><th>destination</th><th>host</th><th>port</th></tr></thead>
+      <tbody>
+        {% for a in allowed %}
+          <tr><td>{{ a.name }}</td><td><code class="num">{{ a.host }}</code></td><td class="num">{{ a.port }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="faint">Under Private Mode every outbound connection must match one of these
+    (host, port) pairs — anything else is refused before the socket opens.</p>
+  {% else %}
+    <p class="muted">No egress destinations resolved from the current configuration.</p>
+  {% endif %}
+</section>

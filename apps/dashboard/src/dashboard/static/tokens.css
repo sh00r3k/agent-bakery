@@ -1,0 +1,174 @@
+/* =============================================================================
+   tokens.css — Agents dashboard design system (single source of truth)
+   -----------------------------------------------------------------------------
+   AESTHETIC: "command deck" — a deep blue-black canvas with an atmospheric
+   top glow and a perceptible blueprint grid; a SIGNAL teal-cyan accent that
+   actually glows; panels with real layering (inset top-highlight + soft drop);
+   status shown as GLOWING LED dots with a live pulse; big instrument-readout
+   metric numbers. Engineered, calm until something is wrong, then it lights up.
+
+   TYPE — three voices, never one monotone face:
+     - Saira (display): brand, page/section headings, big metrics. Technical
+       aerospace-readout character, uppercase + tracked. Cyrillic ✓.
+     - IBM Plex Mono (data): ids, ports, timestamps, counts, badges, labels.
+     - IBM Plex Sans (prose): paragraphs, message bodies, reports.
+   All three carry Cyrillic (UI is Russian: «Помощь», «Тикеты», «Инциденты»).
+
+   RULES (encode, don't describe):
+     - Intent-named tokens ONLY. No --blue-500, no hex in feature CSS/templates.
+     - Reference these from dash.css via var(--token). Never inline a hex.
+   ============================================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Saira:wght@400;500;600;700;800&display=swap&subset=cyrillic,cyrillic-ext,latin,latin-ext");
+
+:root {
+  /* ---------------------------------------------------------------------------
+     SURFACE LADDER — deep blue-black, layered. Each step is a faint lift.
+     bg < surface < surface-raised < surface-overlay. `top-hi` = the inset
+     highlight on a panel's top edge that sells real depth.
+     --------------------------------------------------------------------------- */
+  --bg: #06090e; /* app canvas, deepest */
+  --surface: #0d121a; /* panels, nav, header bar */
+  --surface-raised: #131a24; /* tiles, cards on a panel */
+  --surface-overlay: #1b2532; /* hover rows, popovers, inputs-active */
+  --surface-top-hi: rgba(
+    180,
+    220,
+    235,
+    0.05
+  ); /* inset top highlight on panels */
+
+  /* ---------------------------------------------------------------------------
+     CONTENT — neutrals with a hint of cool. Hierarchy: content -> muted -> faint.
+     --------------------------------------------------------------------------- */
+  --content: #e4e9f0; /* primary text */
+  --content-muted: #8b95a6; /* labels, secondary, table headers */
+  --content-faint: #59626f; /* timestamps, hints, disabled, separators */
+
+  /* ---------------------------------------------------------------------------
+     BORDER — hairline 1px. Structure from borders + the panel highlight/shadow.
+     --------------------------------------------------------------------------- */
+  --border-hairline: #1d2531; /* default 1px divider / panel edge */
+  --border-strong: #2f3a48; /* emphasized edge (focused input, active, hover) */
+
+  /* ---------------------------------------------------------------------------
+     ACCENT — the ONE signal color. Vivid teal-cyan; the command-deck glow.
+     -quiet = low-alpha tint behind accent text; -glow = halo for active/live.
+     --------------------------------------------------------------------------- */
+  /* GRAPHITE / near-mono: the accent is a restrained STEEL grey, NOT a neon hue.
+     Saturated color appears ONLY in status (ok/warn/danger); the accent merely
+     marks "active / primary / interactive". Glows kept minimal (no neon halo). */
+  --accent: #8a97a8; /* primary actions, active nav, links, brand tick (steel) */
+  --accent-bright: #aab4c2; /* hover / live highlight */
+  --accent-quiet: #181d25; /* faint steel tint bg (active pill, selected row) */
+  --accent-contrast: #0a0e13; /* dark text/icon ON a filled steel surface */
+  --accent-glow: rgba(138, 151, 168, 0.22); /* subtle */
+  --glow-top: rgba(
+    180,
+    200,
+    220,
+    0.04
+  ); /* neutral cool canvas glow (very faint) */
+
+  /* ---------------------------------------------------------------------------
+     STATUS — semantic, punchier than neutrals so a problem reads instantly.
+     Each: solid color (dots/text) + -bg quiet fill + -glow halo for LED dots.
+     --------------------------------------------------------------------------- */
+  --ok: #35d39a;
+  --ok-bg: #0b2018;
+  --ok-glow: rgba(53, 211, 154, 0.55);
+  --warn: #f0b42a;
+  --warn-bg: #241c09;
+  --warn-glow: rgba(240, 180, 42, 0.5);
+  --danger: #f0716f;
+  --danger-bg: #2a1314;
+  --danger-glow: rgba(240, 113, 111, 0.55);
+  --info: #56a9e0;
+  --info-bg: #0e1f2b;
+  --idle: #59626f; /* neutral / unknown / batch-no-port */
+  --idle-bg: #141a22;
+
+  /* Categorical series palette — stacked cost-by-model bars. Distinct hues,
+     readable on the deep canvas; cycled by index when models exceed the set. */
+  --chart-1: #56a9e0;
+  --chart-2: #35d39a;
+  --chart-3: #f0b42a;
+  --chart-4: #b48ce0;
+  --chart-5: #f0716f;
+  --chart-6: #5ec8c8;
+
+  /* ---------------------------------------------------------------------------
+     RADII — low. Engineered, not bubbly.
+     --------------------------------------------------------------------------- */
+  --r-sm: 3px;
+  --r-md: 5px;
+
+  /* ---------------------------------------------------------------------------
+     SPACE SCALE — 4px base. Use the scale; no arbitrary spacing.
+     --------------------------------------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* ---------------------------------------------------------------------------
+     TYPE — Saira (display) + IBM Plex Mono (data) + IBM Plex Sans (prose).
+     NEVER Inter/Roboto/Arial. Fallbacks keep the right feel per voice.
+     --------------------------------------------------------------------------- */
+  --font-display:
+    "Saira", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --fs-xs: 11px; /* badges, micro-meta */
+  --fs-sm: 12px; /* table cells, secondary labels */
+  --fs-md: 13px; /* base body / data */
+  --fs-lg: 15px; /* section titles */
+  --fs-xl: 19px; /* page heading */
+  --fs-2xl: 26px; /* large metric */
+  --fs-3xl: 38px; /* hero instrument readout */
+
+  --lh-tight: 1.25; /* data rows, numbers */
+  --lh-base: 1.55; /* prose */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* tracking for display labels (the "mission-control readout" feel) */
+  --track-display: 0.08em;
+  --track-wide: 0.16em;
+
+  /* tabular numerals for all metrics/ids */
+  --num-tabular: tabular-nums;
+
+  /* ---------------------------------------------------------------------------
+     ELEVATION — panels get a subtle inset top-highlight + soft drop for depth;
+     overlays float higher.
+     --------------------------------------------------------------------------- */
+  --shadow-panel:
+    inset 0 1px 0 var(--surface-top-hi), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --shadow-raised:
+    inset 0 1px 0 var(--surface-top-hi), 0 2px 8px -4px rgba(0, 0, 0, 0.6);
+  --shadow-overlay: 0 12px 32px -8px rgba(0, 0, 0, 0.75);
+
+  /* ---------------------------------------------------------------------------
+     MOTION — micro, CSS-only. Calm; live elements get a slow pulse.
+     --------------------------------------------------------------------------- */
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+  --dur: 130ms;
+  --dur-slow: 260ms;
+
+  /* ---------------------------------------------------------------------------
+     TEXTURE — blueprint grid, faintly cool-tinted so it's perceptible without
+     stealing focus. Composed into the canvas background.
+     --------------------------------------------------------------------------- */
+  --grid-line: rgba(120, 180, 200, 0.035);
+  --grid-size: 30px;
+}

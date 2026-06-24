@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login — {{ brand }}</title>
+  <link rel="stylesheet" href="/static/tokens.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/static/dash.css?v={{ asset_v }}">
+</head>
+<body class="login-body">
+  <form method="post" action="/login" class="login-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <h1>{{ brand }}</h1>
+    <p class="muted">Paste a host-minted admin token.</p>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <input type="password" name="token" placeholder="admin JWT" autofocus autocomplete="off">
+    <button type="submit">Sign in</button>
+  </form>
+</body>
+</html>

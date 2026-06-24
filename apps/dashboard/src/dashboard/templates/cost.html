@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}LLM cost{% endblock %}
+{% block content %}
+<h1>LLM cost rollup</h1>
+<p class="muted">agent-estimated (from each <code>/metrics.json</code>); the gateway is billing truth.</p>
+<div hx-get="/partials/cost" hx-trigger="load, every 300s" hx-swap="innerHTML">
+  <p class="muted">loading…</p>
+</div>
+{% endblock %}

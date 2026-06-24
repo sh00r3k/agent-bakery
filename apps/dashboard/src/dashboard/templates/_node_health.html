@@ -1,0 +1,49 @@
+{# Live cluster node-health panel (Pattern 2) — HTMX fragment.
+
+Renders one tile per agents agent, color-coded by HealthDTO.status with a
+glowing LED dot. The PAGE shell (agents.html) owns the 5s poll; this fragment
+root carries NO hx-* so it swaps in place without double-polling. Because the
+aggregator fan-out is live on every poll, the status IS the freshness signal.
+
+Context (panel_routes.node_health_partial):
+- nodes: list[{name, status: green|amber|red|grey, uptime_s, error}]
+- unavailable: str | None  (set when the fan-out itself failed)
+
+Design ref: docs/design-ui-inspiration.md §"Pattern 2 — Live node health".
+#}
+{% set _label = {"green": "healthy", "amber": "degraded", "red": "down", "grey": "batch"} %}
+{% set _badge = {"green": "low", "amber": "warning", "red": "high", "grey": "info"} %}
+<section class="panel" id="node-health-panel">
+  <header class="aggbar">
+    <span class="dot {{ 'red' if unavailable else 'green' }}"></span> cluster node health
+    {% if nodes %}<span class="sep">·</span> <b>{{ nodes | length }}</b> nodes{% endif %}
+  </header>
+  {% if unavailable %}
+    <p class="error">node health unavailable — {{ unavailable }}.</p>
+  {% elif nodes %}
+    <div class="tiles">
+      {% for node in nodes %}
+        <article class="tile {{ node.status }}">
+          <header>
+            <span class="dot {{ node.status }}"></span>
+            <a class="tile-title num" href="/agents/{{ node.name }}">{{ node.name }}</a>
+          </header>
+          <div class="meta">
+            <span class="badge {{ _badge.get(node.status, 'info') }}">{{ _label.get(node.status, node.status) }}</span>
+          </div>
+          <footer>
+            {% if node.error %}
+              <span class="faint">{{ node.error }}</span>
+            {% elif node.uptime_s is not none %}
+              <span class="faint">uptime: {{ (node.uptime_s | int) }}s</span>
+            {% else %}
+              <span class="faint">live</span>
+            {% endif %}
+          </footer>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No nodes reporting — the agents registry is empty or every agent is the dashboard itself.</p>
+  {% endif %}
+</section>

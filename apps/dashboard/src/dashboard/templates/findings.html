@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Findings{% endblock %}
+{% block content %}
+<h1>Security findings</h1>
+<button hx-post="/actions/scan" hx-target="#action-result" hx-swap="innerHTML">Run scan now</button>
+<div id="action-result"></div>
+<div hx-get="/partials/findings" hx-trigger="load, every 30s" hx-swap="innerHTML">
+  <p class="muted">loading…</p>
+</div>
+{% endblock %}

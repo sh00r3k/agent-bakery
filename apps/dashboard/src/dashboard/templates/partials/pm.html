@@ -1,0 +1,21 @@
+{% if unavailable %}
+  <p class="warn">⚠ pm agent unavailable: {{ unavailable }}</p>
+  <p class="muted">No PM agent ships in the agents yet (Plan 4 §2.6 / Plan 0 Phase 5).
+     This screen reserves the slot; it populates once a <code>pm</code>-capable agent
+     exposes <code>/digests</code> + <code>/action-items</code>.</p>
+{% else %}
+<h3>Latest digests</h3>
+<div class="panel">
+<ul class="feed">
+  {% for d in digests %}<li><b>{{ d.date or d.ts }}</b> — {{ d.summary }}</li>
+  {% else %}<li class="muted">none</li>{% endfor %}
+</ul>
+</div>
+<h3>Open action items</h3>
+<div class="panel">
+<ul class="feed">
+  {% for it in action_items %}<li>{{ it.title or it.text }} <span class="muted">({{ it.status }})</span></li>
+  {% else %}<li class="muted">none</li>{% endfor %}
+</ul>
+</div>
+{% endif %}

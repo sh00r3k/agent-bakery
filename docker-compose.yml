@@ -1,0 +1,279 @@
+# agent-bakery — root distribution compose.
+#
+# One command brings up the whole platform: shared infra (Postgres+pgvector,
+# Redis, RabbitMQ) + the agents (monitoring, dashboard) on the
+# `agent_backend` network. This COMPOSES the per-member reference files
+# (agents/monitoring/docker-compose.yml, apps/dashboard/docker-compose.yml,
+# infra/edge, infra/docker-socket-proxy.yml) — it does not
+# contradict them: same service names, ports, build contexts, env_file paths.
+#
+# Quick start:
+#   cp env.example .env            # set IMAGE_TAG, POSTGRES_PASSWORD, JWT_SECRET
+#   cp agents/monitoring/env.example agents/monitoring/.env
+#   cp apps/dashboard/env.example apps/dashboard/.env
+#   docker compose up -d                            # core: infra + monitoring + dashboard
+#   docker compose --profile edge up -d             # + Caddy TLS
+#   docker compose --profile meta up -d             # + read-only docker-socket-proxy
+#
+# Ollama + the OpenAI-compatible LLM gateway are NOT containerized here (they
+# live on the host / external); agents reach them via host.docker.internal.
+#
+# Distribution mode is chosen per-service by IMAGE_TAG vs a `build:` override:
+# by default services pull ${REGISTRY}/<svc>:${IMAGE_TAG}; uncomment the build:
+# stanza (or use docker-compose.build.yml) to build from source instead.
+#
+# Release images (built & pushed by .github/workflows/release.yml — ADR-0012):
+#   monitoring  → long-running agent, service `monitoring_agent` below
+#   dashboard   → long-running app,   service `dashboard` below
+#   platform-cli → operator CLI,      NOT a compose service — run on demand:
+#       docker run --rm \
+#         ${REGISTRY:-ghcr.io/<owner>/agent-bakery}/platform-cli:${IMAGE_TAG:-latest} \
+#         doctor --json
+# (platform-cli owns the DASHBOARD_AGENTS registry key + docker compose
+# up/down — see ADR-0011.)
+
+x-agent-common: &agent-common
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  security_opt:
+    - "no-new-privileges:true"
+  cap_drop:
+    - ALL
+  restart: unless-stopped
+
+services:
+  # ---- Layer 1: shared infra -------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agent-postgres-1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: postgres
+    # bootstrap.sql runs once on an empty data dir: creates one DB per agent +
+    # the pgvector extension (idempotent CREATE … IF NOT EXISTS / \gexec).
+    # Re-run manually after first boot if you add agents:
+    #   docker exec -i agent-postgres-1 psql -U appuser -d postgres < infra/bootstrap.sql
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/bootstrap.sql:/docker-entrypoint-initdb.d/bootstrap.sql:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - agent_backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-appuser} -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: agent-redis-1
+    # Require a password: -a auth on every connection (REDIS_PASSWORD is REQUIRED,
+    # compose fails fast if unset). Agents must set REDIS_PASSWORD in their .env.
+    command:
+      [
+        "redis-server",
+        "--save",
+        "60",
+        "1",
+        "--appendonly",
+        "no",
+        "--requirepass",
+        "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}",
+      ]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - agent_backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: agent-rabbitmq-1
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-appuser}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:?set RABBITMQ_PASS in .env}
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    networks:
+      - agent_backend
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    restart: unless-stopped
+
+  # ---- Layer 3: agents & apps ------------------------------------------------
+  # The buildable/shippable agents in this distribution are `monitoring` and
+  # `dashboard`. Add a new agent service here once its source + Dockerfile land
+  # (repo-root build context, like monitoring/dashboard).
+
+  monitoring_agent:
+    <<: *agent-common
+    image: ${REGISTRY:-ghcr.io/acme/agent-bakery}/monitoring:${IMAGE_TAG:-latest}
+    # build:
+    #   # Repo root as context so the workspace package agentkit is available.
+    #   context: .
+    #   dockerfile: agents/monitoring/Dockerfile
+    container_name: monitoring_agent
+    env_file: agents/monitoring/.env
+    networks:
+      - agent_backend
+    # Stateless service: lock the root filesystem read-only and give it a writable
+    # tmpfs for /tmp only (cap_drop ALL + no-new-privileges come from *agent-common).
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Host /proc/meminfo read-only so host-vitals reflect the HOST, not cgroup.
+    volumes:
+      - /proc/meminfo:/host/proc/meminfo:ro
+    ports:
+      - "127.0.0.1:8002:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
+
+  dashboard:
+    <<: *agent-common
+    image: ${REGISTRY:-ghcr.io/acme/agent-bakery}/dashboard:${IMAGE_TAG:-latest}
+    # build:
+    #   context: .
+    #   dockerfile: apps/dashboard/Dockerfile
+    container_name: dashboard
+    env_file: apps/dashboard/.env
+    # Stateless service: lock the root filesystem read-only and give it a writable
+    # tmpfs for /tmp only (cap_drop ALL + no-new-privileges come from *agent-common).
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      agent_backend:
+        # Stable in-cluster hostname `dashboard` (matches the registry / self URL).
+        aliases:
+          - dashboard
+    ports:
+      - "127.0.0.1:8005:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          # Plan 4 §6 budget: ~140 MB RSS, cap 256M / 0.5 cpu.
+          cpus: "0.5"
+          memory: 256M
+
+  # ---- optional profile: meta (read-only Docker state for monitoring) --------
+  # Single source of truth for the proxy (the standalone infra/docker-socket-proxy.yml
+  # is the same service). Only ONE proxy must run; monitoring_agent reaches it at
+  # DOCKER_PROXY_URL=http://docker-socket-proxy:2375. NB: the per-member
+  # agents/monitoring/docker-compose.yml names this service `docker-socket-proxy`,
+  # while infra/docker-socket-proxy.yml names it `docker-proxy` — align
+  # monitoring_agent's DOCKER_PROXY_URL with whichever name you run.
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    container_name: docker-socket-proxy
+    profiles: ["meta"]
+    environment:
+      CONTAINERS: 1
+      INFO: 1
+      VERSION: 1
+      PING: 1
+      LOGS: 1
+      POST: 0
+      EXEC: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - agent_backend
+    security_opt:
+      - "no-new-privileges:true"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+    restart: unless-stopped
+
+  # ---- optional profile: edge (Caddy TLS + routing) --------------------------
+  # Host networking: binds host :80/:443 and reaches agents via their loopback
+  # ports (127.0.0.1:800X) — it canNOT use container names (not on agent_backend).
+  edge-caddy:
+    image: caddy:2-alpine
+    container_name: edge-caddy
+    profiles: ["edge"]
+    network_mode: host
+    volumes:
+      - ./infra/edge/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt:
+      - "no-new-privileges:true"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 96M
+    restart: unless-stopped
+
+networks:
+  agent_backend:
+    # Root compose OWNS the network (members declare it external; this creates it).
+    name: agent_backend
+
+volumes:
+  pgdata:
+  redisdata:
+  rabbitmqdata:
+  caddy_data:
+  caddy_config:
