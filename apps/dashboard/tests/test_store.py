@@ -14,7 +14,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from psycopg import sql as psql
 from dashboard import store
 
 

@@ -85,7 +85,12 @@ jobs:
       - run: uv sync --frozen
       # Lockfile-driven CVE scan (BR-010: no secrets in the repo; secret scanning
       # runs against the git history so redactions aren't accidentally lost).
-      - run: uv run --with pip-audit pip-audit --strict
+      # `--skip-editable` excludes the local workspace members (agentkit, etc.)
+      # which are not on PyPI — only PyPI-published transitive deps are audited.
+      # `.` scopes the audit to the root project (the workspace aggregator's
+      # pyproject has no direct deps of its own; the transitive surface lives
+      # in the lockfile).
+      - run: uv run --with pip-audit pip-audit --strict --skip-editable .
       - name: gitleaks (full history)
         uses: gitleaks/gitleaks-action@v2
         env:

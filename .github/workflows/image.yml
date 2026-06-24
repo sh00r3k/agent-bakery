@@ -1,0 +1,70 @@
+# Edge-image build — publishes a rolling `edge` tag for every member on every
+# push to main. Production deployments pin to SemVer tags from release.yml;
+# edge tags let operators (and the dashboard) preview the current HEAD without
+# cutting a release.
+#
+# Tag scheme:  ghcr.io/$OWNER/agent-bakery/<member>:edge
+# Cache:       GitHub Actions cache, keyed per member.
+# Auth:        GITHUB_TOKEN is enough for GHCR on public repos.
+name: image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository_owner }}
+
+jobs:
+  build:
+    name: build & push (${{ matrix.member.title }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: monitoring-agent
+            dockerfile: agents/monitoring/Dockerfile
+            title: monitoring
+          - id: dashboard
+            dockerfile: apps/dashboard/Dockerfile
+            title: dashboard
+          - id: platform-cli
+            dockerfile: apps/platform-cli/Dockerfile
+            title: platform-cli
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push (${{ matrix.member.title }})
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.member.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/agent-bakery/${{ matrix.member.title }}:edge
+          labels: |
+            org.opencontainers.image.title=${{ matrix.member.title }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
